@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Teexter</string>
+	<string name="permission_access_data">Access Teexter Data</string>
+	<string name="permission_access_data_description">Access messages in the Teexter database</string>
+	<string name="search">Search</string>
+	<string name="search_condensed">@string/search</string>
+	<string name="compose">Compose</string>
+	<string name="compose_condensed">@string/compose</string>
+	<string name="yes">Yes</string>
+	<string name="no">No</string>
+	<string name="cancel">Cancel</string>
+	<string name="are_you_sure">Are you sure</string>
+	<string name="message_delete_are_you_sure">Your message will be permanently deleted</string>
+	<string name="delete">Delete</string>
+	<string name="delete_condensed">@string/delete</string>
+	<string name="favourite">Favourite</string>
+	<string name="favourite_condensed">@string/favourite</string>
+	<string name="reply">Reply</string>
+	<string name="reply_condensed">@string/reply</string>
+	<string name="share">Share</string>
+	<string name="share_condensed">@string/share</string>
+	<string name="search_messages_hint">Search Messages</string>
+	<string name="search_messages_description">@string/search_messages_hint</string>
+</resources>

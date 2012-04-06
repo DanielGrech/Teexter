@@ -1,0 +1,13 @@
+<resources>
+    <color name="orange_default">#E65D18</color>
+    <color name="orange_faded">#EC7D46</color>
+    <color name="light_text">#969696</color>
+    <color name="message_text">#505050</color>
+    <color name="title_indicator_underline">@color/orange_default</color>
+    <color name="title_indicator_text_selected_color">@color/orange_default</color>
+    <color name="title_indicator_text_unselected_color">@color/orange_faded</color>
+    <color name="ab_background_start">#F2F2F2</color>
+    <color name="ab_background_end">#CACACA</color>
+    <color name="window_background_start">#E9E9E9</color>
+    <color name="window_background_end">#F3F3F3</color>
+</resources>

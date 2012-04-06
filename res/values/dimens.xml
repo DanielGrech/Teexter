@@ -1,0 +1,11 @@
+<resources>
+    <!-- Minimum width of the search view text entry area. We make it a huge 
+		number to force it to take up the entire available space -->
+	<dimen name="search_view_text_min_width">10000dip</dimen>
+
+	<!-- Text padding for dropdown items -->
+	<dimen name="dropdownitem_text_padding_left">8dip</dimen>
+
+	<!-- Text padding for dropdown items -->
+	<dimen name="dropdownitem_text_padding_right">8dip</dimen>
+</resources>

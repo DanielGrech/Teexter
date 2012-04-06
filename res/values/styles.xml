@@ -1,0 +1,37 @@
+<resources>
+    <!-- Action bar -->
+    <style name="teexter_actionbar" parent="Widget.Sherlock.Light.ActionBar">
+        <item name="background">@drawable/actionbar_background</item>
+        <item name="android:background">@drawable/actionbar_background</item>
+    </style>  
+    
+    
+    <!-- Text -->    
+    <style name="base_text" parent="android:style/TextAppearance.Medium.Inverse">
+        
+    </style>
+    
+    <style name="base_text_small" parent="android:style/TextAppearance.Small.Inverse">
+        
+    </style>
+    
+    <style name="message_name" parent="base_text_small">
+        <item name="android:textColor">@color/orange_default</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:gravity">left|center_vertical</item>
+    </style>
+    
+    <style name="message_date" parent="base_text_small">
+        <item name="android:textColor">@color/light_text</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:gravity">right|center_vertical</item>
+    </style>
+    
+    <style name="message_contents" parent="base_text">
+        <item name="android:textColor">@color/message_text</item>
+        <item name="android:singleLine">false</item>
+    </style>
+    
+</resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/delete"
+        android:enabled="true"
+        android:icon="@drawable/ic_action_delete"
+        android:showAsAction="always"
+        android:title="@string/delete"
+        android:titleCondensed="@string/delete_condensed" />
+    
+    <item
+    	android:id="@+id/share"
+    	android:enabled="true"
+        android:icon="@drawable/ic_action_share"
+        android:showAsAction="ifRoom"
+        android:title="@string/share"
+        android:titleCondensed="@string/share_condensed" />
+    
+    <item
+    	android:id="@+id/favourite"
+    	android:enabled="true"
+        android:icon="@drawable/ic_action_star"
+        android:showAsAction="ifRoom"
+        android:title="@string/favourite"
+        android:titleCondensed="@string/favourite_condensed" />
+    
+    <item
+    	android:id="@+id/reply"
+    	android:enabled="true"
+        android:icon="@drawable/ic_action_compose"
+        android:showAsAction="ifRoom"
+        android:title="@string/reply"
+        android:titleCondensed="@string/reply_condensed" />
+        
+</menu>
