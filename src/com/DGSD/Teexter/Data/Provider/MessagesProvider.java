@@ -1,5 +1,7 @@
 package com.DGSD.Teexter.Data.Provider;
 
+import java.util.Arrays;
+
 import android.app.SearchManager;
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -26,14 +28,16 @@ public class MessagesProvider extends ContentProvider {
 
 	protected static final UriMatcher mURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	private static final int INBOX = 0x1;
-	private static final int SENT = 0x2;
-	private static final int FAVOURITES = 0x3;
-	private static final int RECIPIENTS = 0x4;
-	private static final int SEARCH_MANAGER = 0x5;
+	private static final int INBOX_WITH_ID = 0x2;
+	private static final int SENT = 0x3;
+	private static final int SENT_WITH_ID = 0x4;
+	private static final int RECIPIENTS = 0x5;
+	private static final int RECIPIENTS_WITH_ID = 0x6;
+	private static final int SEARCH_MANAGER = 0x7;
+	
 
 	public static final Uri INBOX_URI = Uri.withAppendedPath(BASE_URI, "inbox");
 	public static final Uri SENT_URI = Uri.withAppendedPath(BASE_URI, "sent");
-	public static final Uri FAVOURITES_URI = Uri.withAppendedPath(BASE_URI, "favourites");
 	public static final Uri RECIPIENTS_URI = Uri.withAppendedPath(BASE_URI, "recipients");
 	
 
@@ -43,9 +47,11 @@ public class MessagesProvider extends ContentProvider {
 		mURIMatcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY + "/*", SEARCH_MANAGER);
 		mURIMatcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY, SEARCH_MANAGER);
 		mURIMatcher.addURI(AUTHORITY, "inbox", INBOX);
+		mURIMatcher.addURI(AUTHORITY, "inbox/*", INBOX_WITH_ID);
 		mURIMatcher.addURI(AUTHORITY, "sent", SENT);
-		mURIMatcher.addURI(AUTHORITY, "favourites", FAVOURITES);
+		mURIMatcher.addURI(AUTHORITY, "sent/*", SENT_WITH_ID);
 		mURIMatcher.addURI(AUTHORITY, "recipients", RECIPIENTS);
+		mURIMatcher.addURI(AUTHORITY, "recipients/*", RECIPIENTS_WITH_ID);
 	}
 
 	@Override
@@ -111,10 +117,6 @@ public class MessagesProvider extends ContentProvider {
 				case SENT:
 					qb.setTables(DbTable.SENT.getName());
 					break;
-				case FAVOURITES:
-					qb.setTables(DbTable.INBOX.getName());
-					qb.appendWhere(DbField.FAVOURITE + "=1");
-					break;
 				case RECIPIENTS:
 					qb.setTables(DbTable.RECIPIENTS.getName());
 					break;
@@ -137,7 +139,7 @@ public class MessagesProvider extends ContentProvider {
 	public Uri insert(Uri uri, ContentValues values) {
 		try {
 			int type = mURIMatcher.match(uri);
-			if (type == UriMatcher.NO_MATCH || type == FAVOURITES) {
+			if (type == UriMatcher.NO_MATCH) {
 				if (BuildConfig.DEBUG) {
 					Log.w(TAG, "No match for URI: " + uri);
 				}
@@ -180,7 +182,7 @@ public class MessagesProvider extends ContentProvider {
 	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 		try {
 			int type = mURIMatcher.match(uri);
-			if (type == UriMatcher.NO_MATCH) {
+			if (!Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID, RECIPIENTS_WITH_ID).contains(type)) {
 				if (BuildConfig.DEBUG) {
 					Log.w(TAG, "No match for URI: " + uri);
 				}
@@ -192,21 +194,30 @@ public class MessagesProvider extends ContentProvider {
 
 			String table = null;
 			switch (type) {
-				case INBOX:
+				case INBOX_WITH_ID:
 					table = DbTable.INBOX.getName();
 					break;
-				case SENT:
+				case SENT_WITH_ID:
 					table = DbTable.SENT.getName();
 					break;
-				case FAVOURITES:
-					table = DbTable.INBOX.getName();
-					break;
-				case RECIPIENTS:
+				case RECIPIENTS_WITH_ID:
 					table = DbTable.RECIPIENTS.getName();
 					break;
 			}
 
-			int rowsAffected = db.update(table, values, selection, selectionArgs);
+			
+			
+			int rowsAffected = 0;
+			String id = uri.getLastPathSegment();
+			if (TextUtils.isEmpty(selection)) {
+				rowsAffected = db.update(table, values, new StringBuilder()
+						.append(DbField.ID).append("=").append(id).toString(), null);
+			} else {
+				rowsAffected = db.update(table, values, new StringBuilder()
+						.append(selection).append(" and ").append(DbField.ID).append("=").append(id).toString(),
+						selectionArgs);
+			}
+			
 			getContext().getContentResolver().notifyChange(uri, null);
 			return rowsAffected;
 		} catch (Exception e) {
@@ -222,7 +233,7 @@ public class MessagesProvider extends ContentProvider {
 	public int delete(Uri uri, String sel, String[] selArgs) {
 		try {
 			int type = mURIMatcher.match(uri);
-			if (type == UriMatcher.NO_MATCH || type == FAVOURITES) {
+			if (!Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID, RECIPIENTS_WITH_ID).contains(type)) {
 				if (BuildConfig.DEBUG) {
 					Log.w(TAG, "No match for URI: " + uri);
 				}
@@ -234,23 +245,20 @@ public class MessagesProvider extends ContentProvider {
 
 			String table = null;
 			switch (type) {
-				case INBOX:
+				case INBOX_WITH_ID:
 					table = DbTable.INBOX.getName();
 					break;
-				case SENT:
+				case SENT_WITH_ID:
 					table = DbTable.SENT.getName();
 					break;
-				case FAVOURITES:
-					table = DbTable.INBOX.getName();
-					break;
-				case RECIPIENTS:
+				case RECIPIENTS_WITH_ID:
 					table = DbTable.RECIPIENTS.getName();
 					break;
 			}
 
 			String id = uri.getLastPathSegment();
 			int rowsAffected = 0;
-			if (TextUtils.isEmpty(id)) {
+			if (TextUtils.isEmpty(sel)) {
 				rowsAffected = db.delete(table, new StringBuilder().append(DbField.ID).append("=").append(id)
 						.toString(), null);
 			} else {

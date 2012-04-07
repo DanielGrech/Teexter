@@ -3,16 +3,21 @@ package com.DGSD.Teexter.Data;
 public class DbTable {
 
 	public static final DbTable INBOX = new DbTable("_inbox", new DbField[] {
-		DbField.ID, DbField.TIME, // Timestamp in millis
+		DbField.ID, 
+		DbField.TIME, // Timestamp in millis
 		DbField.CONTACT_LOOKUP_ID, // Contact lookup
+		DbField.PHOTO_URI,
 		DbField.DISPLAY_NAME, // The contact display name (or number) associated with this msg
+		DbField.NUMBER,
 		DbField.MESSAGE, // Message contents
-		DbField.FAVOURITE // This message is marked as a favourite
+		DbField.FAVOURITE, // This message is marked as a favourite
+		DbField.READ
 	});
 
 	public static final DbTable SENT = new DbTable("_sent", new DbField[] {
-		DbField.ID, DbField.TIME, // Timestamp in millis
-		DbField.MESSAGE	// Message contents
+		DbField.ID, 
+		DbField.TIME, // Timestamp in millis
+		DbField.MESSAGE, // Message contents
 	});
 
 	public static final DbTable RECIPIENTS = new DbTable("_recipients", new DbField[] {

@@ -7,6 +7,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.app.SearchManager;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,6 +29,7 @@ import com.DGSD.Teexter.Fragment.FavouritesFragment;
 import com.DGSD.Teexter.Fragment.InboxFragment;
 import com.DGSD.Teexter.Fragment.SentFragment;
 import com.DGSD.Teexter.Service.DatabaseService;
+import com.DGSD.Teexter.Utils.DiagnosticUtils;
 import com.DGSD.Teexter.Utils.IntentUtils;
 import com.DGSD.Teexter.Utils.ToastUtils;
 import com.actionbarsherlock.view.ActionMode;
@@ -38,6 +40,7 @@ import com.actionbarsherlock.view.Window;
 import com.viewpagerindicator.TitlePageIndicator;
 import com.viewpagerindicator.TitleProvider;
 
+//TODO: Add 'Forward' option
 public class MainActivity extends BaseReceiverActivity implements DialogInterface.OnClickListener,
 		OnMessageItemLongClickListener {
 	private static final int CONFIRM_DELETE_DIALOG = 0;
@@ -101,7 +104,8 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.compose:
-
+				final Intent intent = new Intent(this, ComposeActivity.class);
+				startActivity(intent);
 				return true;
 			case R.id.search:
 				onSearchRequested();
@@ -163,7 +167,8 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 	public void onClick(DialogInterface dialog, int id) {
 		switch (id) {
 			case DialogInterface.BUTTON_POSITIVE:
-				// TODO: Delete calendar with clientId 'mLastCalendarId'
+				DatabaseService.requestDeleteInboxMessage(this, mLastMessageLongClicked);
+				showProgressBar();
 				mLongPressActionMode.finish();
 				break;
 			case DialogInterface.BUTTON_NEGATIVE:
@@ -182,19 +187,24 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		int type = intent.getIntExtra(Extra.DATA_TYPE, -1);
 		String action = intent.getAction();
 
-		if (type == DatabaseService.RequestType.TOGGLE_FAVOURITE) {
-			if (action.equals(BroadcastType.ERROR)) {
-				ToastUtils.show(this, "Error whilst updating. Please try again", Toast.LENGTH_SHORT);
-			} else if(action.equals(BroadcastType.SUCCESS)) {
-				if(mAdapter != null) {
-					mAdapter.notifyDataSetChanged();
+		switch (type) {
+			case DatabaseService.RequestType.TOGGLE_FAVOURITE:
+				if (action.equals(BroadcastType.ERROR)) {
+					ToastUtils.show(this, "Error whilst updating. Please try again", Toast.LENGTH_SHORT);
 				}
-			}
+				break;
+			case DatabaseService.RequestType.DELETE_INBOX:
+				if (action.equals(BroadcastType.ERROR)) {
+					ToastUtils.show(this, "Error whilst deleting. Please try again", Toast.LENGTH_SHORT);
+				} else if (action.equals(BroadcastType.SUCCESS)) {
+					ToastUtils.show(this, "Message deleted", Toast.LENGTH_SHORT);
+				}
+				break;
 		}
 
 		hideProgressBar();
 	}
-	
+
 	private final class LongPressActionMode implements ActionMode.Callback {
 		private TxtMessage mMsg;
 		private int mFromType;
@@ -209,6 +219,13 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
 			getSupportMenuInflater().inflate(R.menu.message_list_contextual_menu, menu);
 
+			MenuItem item = menu.findItem(R.id.favourite);
+			if (mMsg.isFavourite()) {
+				item.setTitle(R.string.unfavourite);
+			} else {
+				item.setTitle(R.string.favourite);
+			}
+
 			mode.setTitle(mMsg.getMessage());
 
 			return true;
@@ -219,6 +236,7 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 			return false;
 		}
 
+		@SuppressWarnings("deprecation")
 		@Override
 		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 			int id = item.getItemId();
@@ -229,15 +247,33 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 					return true;
 				case R.id.favourite:
 					showProgressBar();
-					DatabaseService.requestToggleFavourite(MainActivity.this, mLastMessageLongClicked,
-							mFromType != FAVOURITES_PAGE);
+					boolean isFav = !mMsg.isFavourite();
+					DatabaseService.requestToggleFavourite(MainActivity.this, mLastMessageLongClicked, isFav);
 					mLongPressActionMode.finish();
 					return true;
 				case R.id.reply:
-
+					Intent intent = new Intent(MainActivity.this, ComposeActivity.class);
+					intent.putExtra(Extra.ID, mLastMessageLongClicked);
+					startActivity(intent);
 					return true;
 				case R.id.share:
 					startActivity(IntentUtils.newShareTextIntent(mMsg.getSender(), mMsg.getMessage(), "Share Message"));
+					return true;
+				case R.id.copy:
+					String msg = mMsg.getMessage();
+					if (DiagnosticUtils.ANDROID_API_LEVEL >= 11) {
+						String bestName = (mMsg.getContact() == null || mMsg.getContact().name == null) ? mMsg
+								.getSender() : mMsg.getContact().name;
+
+						android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+						cm.setPrimaryClip(ClipData.newPlainText("Text Message from " + bestName, msg));
+					} else {
+						android.text.ClipboardManager cm = (android.text.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+						cm.setText(msg);
+					}
+
+					ToastUtils.show(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT);
+					mLongPressActionMode.finish();
 					return true;
 			}
 			return false;
@@ -245,7 +281,7 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 
 		@Override
 		public void onDestroyActionMode(ActionMode mode) {
-			
+
 		}
 	}
 

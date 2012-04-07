@@ -5,10 +5,13 @@ public class DbField {
 	public static final DbField ID = new DbField("_id", "integer", "primary key");
 	public static final DbField TIME = new DbField("_time", "timestamp");
 	public static final DbField CONTACT_LOOKUP_ID = new DbField("_contact_lookup", "text");
+	public static final DbField PHOTO_URI = new DbField("_photo_uri", "text");
 	public static final DbField DISPLAY_NAME = new DbField("_display_name", "text");
+	public static final DbField NUMBER = new DbField("_number", "text");
 	public static final DbField MESSAGE = new DbField("_message", "text");
 	public static final DbField FAVOURITE = new DbField("_favourite", "integer", "DEFAULT 0");
 	public static final DbField SENT_MESSAGE_ID = new DbField("_sent_message_id", "integer");
+	public static final DbField READ = new DbField("_read", "integer");
 	
 	private String name;
 	private String type;

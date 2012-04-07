@@ -5,7 +5,7 @@
  * should not be modified by hand.
  */
 
-package com.DGSD.Teexter;
+package com.commonsware.cwac.endless;
 
 public final class R {
     public static final class attr {

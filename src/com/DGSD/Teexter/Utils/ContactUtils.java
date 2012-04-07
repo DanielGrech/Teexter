@@ -2,8 +2,6 @@ package com.DGSD.Teexter.Utils;
 
 import java.io.InputStream;
 
-import com.DGSD.Teexter.BuildConfig;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -13,8 +11,14 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Contacts.Photo;
 import android.provider.ContactsContract.PhoneLookup;
+import android.telephony.PhoneNumberUtils;
+import android.text.TextUtils;
 import android.util.Log;
+
+import com.DGSD.Teexter.BuildConfig;
 
 public class ContactUtils {
 	private static final String TAG = ContactUtils.class.getSimpleName();
@@ -28,7 +32,16 @@ public class ContactUtils {
 			}, null, null, null);
 
 			if (cursor != null && cursor.moveToFirst()) {
-				return new Contact(cursor.getString(0), cursor.getString(1));
+				String lkpKey = cursor.getString(0);
+
+				Uri lookupUri = Contacts.lookupContact(cr, Uri.withAppendedPath(Contacts.CONTENT_LOOKUP_URI, lkpKey));
+
+				Uri photoUri = null;
+				if (lookupUri != null) {
+					photoUri = Uri.withAppendedPath(lookupUri, Photo.CONTENT_DIRECTORY);
+				}
+
+				return new Contact(lkpKey, cursor.getString(1), phone, photoUri == null ? null : photoUri.toString());
 			} else {
 				return null;
 			}
@@ -67,28 +80,36 @@ public class ContactUtils {
 	public static class Contact implements Parcelable {
 		public String lookupId;
 		public String name;
+		public String phone;
+		public String photoUri;
 
-		public Contact(String lookupId, String name) {
+		public Contact(String lookupId, String name, String phone, String photoUri) {
 			this.lookupId = lookupId;
 			this.name = name;
+			this.phone = phone;
+			this.photoUri = photoUri;
 		}
-		
+
 		private Contact(Parcel in) {
 			lookupId = in.readString();
 			name = in.readString();
+			phone = in.readString();
+			photoUri = in.readString();
 		}
-		
+
 		@Override
 		public int describeContents() {
 			return this.hashCode();
 		}
-		
+
 		@Override
 		public void writeToParcel(Parcel dest, int flags) {
 			dest.writeString(lookupId);
 			dest.writeString(name);
+			dest.writeString(phone);
+			dest.writeString(photoUri);
 		}
-		
+
 		public static final Parcelable.Creator<Contact> CREATOR = new Parcelable.Creator<Contact>() {
 			public Contact createFromParcel(Parcel in) {
 				return new Contact(in);
@@ -98,5 +119,33 @@ public class ContactUtils {
 				return new Contact[size];
 			}
 		};
+	}
+
+	/**
+	 * Fomat the name and number.
+	 * 
+	 * @param name
+	 * @param number
+	 * @param numberE164
+	 *            the number's E.164 representation, is used to get the country
+	 *            the number belongs to.
+	 * @return the formatted name and number
+	 */
+	public static String formatNameAndNumber(String name, String number) {
+		// Format like this: Mike Cleron <(650) 555-1234>
+		// Erick Tseng <(650) 555-1212>
+		// Tutankhamun <tutank1341@gmail.com>
+		// (408) 555-1289
+		String formattedNumber = number;
+
+		if (number.matches(android.util.Patterns.EMAIL_ADDRESS.pattern())) {
+			formattedNumber = PhoneNumberUtils.formatNumber(number);
+		}
+
+		if (!TextUtils.isEmpty(name) && !name.equals(number)) {
+			return name + " <" + formattedNumber + ">";
+		} else {
+			return formattedNumber;
+		}
 	}
 }

@@ -17,10 +17,11 @@ public class FavouritesFragment extends BaseListFragment {
 
 		return frag;
 	}
-	
+
 	@Override
 	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-		return new CursorLoader(getActivity(), MessagesProvider.INBOX_URI, null, DbField.FAVOURITE + "=?", new String[]{"1"}, DbField.TIME.getName() + " DESC");
+		return new CursorLoader(getActivity(), MessagesProvider.INBOX_URI, null, DbField.FAVOURITE + "=1", null,
+				DbField.TIME.getName() + " DESC");
 	}
 
 	@Override
@@ -31,7 +32,7 @@ public class FavouritesFragment extends BaseListFragment {
 			R.id.message
 		}, 0);
 	}
-	
+
 	@Override
 	protected int getType() {
 		return MainActivity.FAVOURITES_PAGE;

@@ -58,7 +58,7 @@ public class SmsReceiver extends BroadcastReceiver {
 		}
 
 		TxtMessage txt = new TxtMessage(smsSender, smsBody, timestamp, ContactUtils.getContactFromPhone(context,
-				smsSender));
+				smsSender), false);
 		if (BuildConfig.DEBUG) {
 			Log.v(TAG, "Got Message: " + txt);
 		}

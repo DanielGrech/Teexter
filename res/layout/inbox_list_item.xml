@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:padding="6dip">
+    android:descendantFocusability="blocksDescendants" >
 
     <com.DGSD.Teexter.UI.QuickContactBadge 
         android:id="@+id/quick_contact_badge"
@@ -10,6 +10,7 @@
         android:layout_height="?android:attr/listPreferredItemHeight"
         android:scaleType="fitCenter"
         android:paddingRight="8dp"
+        android:layout_marginLeft="6dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"/>
     
@@ -40,8 +41,23 @@
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/quick_contact_badge"
         android:layout_below="@id/name"
-        android:layout_marginLeft="6.0dip" 
         android:layout_marginRight="7.0dip"
+        android:paddingBottom="6.0dp"
+        android:layout_alignLeft="@id/name"
         android:gravity="center_vertical"
+        android:autoLink="all"
+        android:linksClickable="false"
         style="@style/message_contents"/>
+    
+<!--     <ImageView
+        android:id="@+id/favourite_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/date"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:src="@drawable/ic_favourite"
+        android:contentDescription="@string/favourite"
+        android:visibility="gone" /> -->
+    
 </RelativeLayout>

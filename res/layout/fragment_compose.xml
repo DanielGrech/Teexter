@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:padding="6dip" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:id="@+id/in_reply_to_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dip"
+            android:background="@drawable/floating_box"
+            android:minHeight="?android:attr/listPreferredItemHeight" >
+
+            <com.DGSD.Teexter.UI.QuickContactBadge
+                android:id="@+id/quick_contact_badge"
+                android:layout_width="64dip"
+                android:layout_height="?android:attr/listPreferredItemHeight"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:paddingRight="8dp"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/name"
+                style="@style/message_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_marginRight="7.0dip"
+                android:layout_marginTop="4.0dip"
+                android:layout_toRightOf="@id/quick_contact_badge" />
+
+            <TextView
+                android:id="@+id/date"
+                style="@style/message_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_marginLeft="6.0dip"
+                android:layout_marginRight="7.0dip"
+                android:layout_marginTop="4.0dip"
+                android:layout_toRightOf="@id/name" />
+
+            <FrameLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/name"
+                android:layout_marginBottom="2.0dp"
+                android:layout_marginLeft="6.0dip"
+                android:layout_marginRight="7.0dip"
+                android:layout_toRightOf="@id/quick_contact_badge" >
+
+                <include
+                    android:id="@+id/expandable_message"
+                    layout="@layout/expandable_textview" />
+            </FrameLayout>
+        </RelativeLayout>
+
+        <!-- <com.DGSD.Teexter.UI.StatefulEditText
+            android:id="@+id/recipients"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dip"
+            android:gravity="top|left"
+            android:hint="@string/to_hint" /> -->
+
+		<include layout="@layout/recipients_editor" />
+
+        <com.DGSD.Teexter.UI.StatefulEditText
+            android:id="@+id/new_message"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginBottom="6dip"
+            android:inputType="textMultiLine"
+            android:gravity="top|left"
+            android:hint="@string/message_hint"
+            android:minLines="5" />
+    </LinearLayout>
+
+</ScrollView>

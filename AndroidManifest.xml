@@ -22,6 +22,7 @@
     <application
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" 
+        android:name=".TeexterApp"
         android:theme="@style/Theme.Teexter">
         
         <!-- Activities -->
@@ -42,8 +43,11 @@
 	                   android:resource="@xml/searchable_messages"/>
         </activity>
         
+        <activity android:name="com.DGSD.Teexter.Activity.ComposeActivity" android:windowSoftInputMode="stateHidden" />
+        
         <!-- Services -->
         <service android:name="com.DGSD.Teexter.Service.DatabaseService" android:permission="com.DGSD.Teexter.ACCESS_DATA"/>
+        <service android:name="com.DGSD.Teexter.Service.ImportSmsService" android:permission="com.DGSD.Teexter.ACCESS_DATA"/>
         
         <!-- Content Providers -->
         <provider android:authorities="com.DGSD.Teexter.Data.Provider.MessagesProvider"

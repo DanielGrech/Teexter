@@ -6,9 +6,11 @@
     <ListView
         android:id="@android:id/list"
         android:fastScrollEnabled="true"
+        android:scrollbarStyle="outsideOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" 
-        android:background="@android:color/transparent" />
+        android:background="@android:color/transparent"
+        android:padding="6dp" />
 
     <ViewStub
         android:id="@android:id/empty"

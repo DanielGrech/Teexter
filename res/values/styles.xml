@@ -29,9 +29,15 @@
         <item name="android:gravity">right|center_vertical</item>
     </style>
     
-    <style name="message_contents" parent="base_text">
+    <style name="message_contents" parent="base_text_small">
         <item name="android:textColor">@color/message_text</item>
         <item name="android:singleLine">false</item>
     </style>
     
+    <!-- Widgets -->
+    <style name="edit_text" parent="@android:style/Widget.EditText">
+        <item name="android:background">@drawable/edit_text_background</item>
+        <item name="android:textColor">@color/message_text</item>
+        <item name="android:textCursorDrawable">@drawable/edit_text_cursor</item>
+    </style>
 </resources>

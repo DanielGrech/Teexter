@@ -10,18 +10,21 @@ public class TxtMessage implements Parcelable {
 	private String mMessage;
 	private long mTimestamp;
 	private Contact mContact;
+	private boolean mIsFavourite;
 
-	public TxtMessage(String sender, String msg, long timestamp, Contact contact) {
+	public TxtMessage(String sender, String msg, long timestamp, Contact contact, boolean isFavourite) {
 		mSender = sender;
 		mMessage = msg;
 		mTimestamp = timestamp;
-		setContact(contact);
+		mContact = contact;
+		mIsFavourite = isFavourite;
 	}
 	
 	private TxtMessage(Parcel in) {
 		mSender = in.readString();
 		mMessage = in.readString();
 		mTimestamp = in.readLong();
+		mIsFavourite = in.readInt() == 1;
 		mContact = in.readParcelable(null);
 	}
 
@@ -56,6 +59,14 @@ public class TxtMessage implements Parcelable {
 	public void setContact(Contact contact) {
 		this.mContact = contact;
 	}
+	
+	public boolean isFavourite() {
+		return mIsFavourite;
+	}
+
+	public void setIsFavourite(boolean isFavourite) {
+		this.mIsFavourite = isFavourite;
+	}
 
 	@Override
 	public String toString() {
@@ -73,6 +84,7 @@ public class TxtMessage implements Parcelable {
 		dest.writeString(mSender);
 		dest.writeString(mMessage);
 		dest.writeLong(mTimestamp);
+		dest.writeInt(mIsFavourite ? 1 : 0);
 		if(mContact != null) {
 			dest.writeParcelable(mContact, 0);
 		}
