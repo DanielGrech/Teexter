@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -20,7 +21,7 @@ import com.DGSD.Teexter.BuildConfig;
 import com.DGSD.Teexter.Extra;
 import com.DGSD.Teexter.R;
 import com.DGSD.Teexter.TxtMessage;
-import com.DGSD.Teexter.Activity.MainActivity;
+import com.DGSD.Teexter.Activity.ComposeActivity;
 import com.DGSD.Teexter.Data.DbField;
 import com.DGSD.Teexter.Data.Provider.MessagesProvider;
 import com.DGSD.Teexter.Service.DatabaseService;
@@ -31,6 +32,7 @@ public class SmsReceiver extends BroadcastReceiver {
 	private static final String TAG = SmsReceiver.class.getSimpleName();
 
 	public static final int NEW_MESSAGE_NOTIFICATION = 0;
+	public static int receivedMessageCounter = 0;
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
@@ -52,9 +54,16 @@ public class SmsReceiver extends BroadcastReceiver {
 
 		for (int i = 0, len = msgs.length; i < len; i++) {
 			msgs[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
-			smsSender += msgs[i].getOriginatingAddress();
+			
+			if(smsSender.equals("")) {
+				smsSender = msgs[i].getOriginatingAddress();
+			}
+			
 			smsBody += msgs[i].getMessageBody().toString();
-			timestamp += msgs[i].getTimestampMillis();
+			
+			if(timestamp == 0L) {
+				timestamp = msgs[i].getTimestampMillis();
+			}
 		}
 
 		TxtMessage txt = new TxtMessage(smsSender, smsBody, timestamp, ContactUtils.getContactFromPhone(context,
@@ -72,6 +81,7 @@ public class SmsReceiver extends BroadcastReceiver {
 				values.put(DbField.DISPLAY_NAME.getName(), txt.getContact().name);
 			}
 			
+			values.put(DbField.NUMBER.getName(), txt.getSender());
 			values.put(DbField.MESSAGE.getName(), txt.getMessage());
 			values.put(DbField.TIME.getName(), txt.getTimestamp());
 
@@ -79,11 +89,26 @@ public class SmsReceiver extends BroadcastReceiver {
 				values.put(DbField.CONTACT_LOOKUP_ID.getName(), txt.getContact().lookupId);
 			}
 
-			if (DatabaseService.doInsert(context, MessagesProvider.INBOX_URI, values) == null) {
-				throw new SQLDataException("No record was inserted for sms: " + txt);
+			if (txt.getContact() != null && txt.getContact().photoUri != null) {
+				values.put(DbField.PHOTO_URI.getName(), txt.getContact().photoUri);
 			}
+			
+			Uri newMsgUri = DatabaseService.doInsert(context, MessagesProvider.INBOX_URI, values);
+			if (newMsgUri == null) {
+				throw new SQLDataException("No record was inserted for sms: " + txt);
+			} 
 
-			showNotification(context, txt);
+			int msgId = -1;
+			try {
+				msgId = Integer.parseInt(newMsgUri.getLastPathSegment());
+			} catch(Exception e) {
+				if(BuildConfig.DEBUG) {
+					Log.e(TAG, "Error getting message id");
+				}
+			}
+			
+			
+			showNotification(context, txt, msgId);
 
 			// We intercepted the message, we dont want other SMS apps to
 			// intercept the message too!
@@ -98,15 +123,17 @@ public class SmsReceiver extends BroadcastReceiver {
 		}
 	}
 
-	private void showNotification(Context c, TxtMessage msg) {
+	private void showNotification(Context c, TxtMessage msg, int msgId) {
 		NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
 		Notification notification = null;
 
 		// Common to notifications for all API levels.
-		Intent intent = new Intent(c, MainActivity.class);
-		intent.putExtra(Extra.TEXT, msg);
+		Intent intent = new Intent(c, ComposeActivity.class);
+		intent.putExtra(Extra.ID, msgId);
+		intent.putExtra(Extra.IS_REPLY, true);
 		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		PendingIntent pi = PendingIntent.getActivity(c, NEW_MESSAGE_NOTIFICATION, intent, 0);
+		
+		PendingIntent pi = PendingIntent.getActivity(c, receivedMessageCounter++, intent, 0);
 
 		String bestName = (msg.getContact() == null || msg.getContact().name == null) ? msg.getSender() == null ? "Unknown Sender"
 				: msg.getSender()

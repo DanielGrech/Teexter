@@ -104,11 +104,11 @@ public abstract class ContactPhotoManager implements ComponentCallbacks2 {
 		ContactPhotoManager service = (ContactPhotoManager) applicationContext.getSystemService(CONTACT_PHOTO_SERVICE);
 		if (service == null) {
 			service = createContactPhotoManager(applicationContext);
-			if(BuildConfig.DEBUG) {
+			if (BuildConfig.DEBUG) {
 				Log.e(TAG, "No contact photo service in context: " + applicationContext);
 			}
 		} else {
-			if(BuildConfig.DEBUG) {
+			if (BuildConfig.DEBUG) {
 				Log.v(TAG, "Got ContactPhotoManager");
 			}
 		}
@@ -213,9 +213,7 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 
 	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-	private static final String[] COLUMNS = new String[] {
-			Photo._ID, Photo.PHOTO
-	};
+	private static final String[] COLUMNS = new String[] { Photo._ID, Photo.PHOTO };
 
 	/**
 	 * Maintains the state of a particular photo.
@@ -316,7 +314,6 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 			}
 		};
 		mBitmapHolderCacheRedZoneBytes = (int) (holderCacheSize * 0.75);
-		Log.i(TAG, "Cache adj: " + cacheSizeAdjustment);
 	}
 
 	@Override
@@ -721,11 +718,9 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 			mPhotoIds.clear();
 			mPhotoIdsAsStrings.clear();
 
-			int count = 0;
 			int preloadSize = mPreloadPhotoIds.size();
 			while (preloadSize > 0 && mPhotoIds.size() < PRELOAD_BATCH) {
 				preloadSize--;
-				count++;
 				Long photoId = mPreloadPhotoIds.get(preloadSize);
 				mPhotoIds.add(photoId);
 				mPhotoIdsAsStrings.add(photoId.toString());
@@ -738,8 +733,6 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 				mPreloadStatus = PRELOAD_STATUS_DONE;
 			}
 
-			Log.v(TAG, "Preloaded " + count + " photos.  Cached bytes: " + mBitmapHolderCache.size());
-
 			requestPreloading();
 		}
 
@@ -750,10 +743,9 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 						.appendQueryParameter(ContactsContract.DIRECTORY_PARAM_KEY, String.valueOf(Directory.DEFAULT))
 						.appendQueryParameter(ContactsContract.LIMIT_PARAM_KEY, String.valueOf(MAX_PHOTOS_TO_PRELOAD))
 						.build();
-				cursor = mResolver.query(uri, new String[] {
-					Contacts.PHOTO_ID
-				}, Contacts.PHOTO_ID + " NOT NULL AND " + Contacts.PHOTO_ID + "!=0", null, Contacts.STARRED + " DESC, "
-						+ Contacts.LAST_TIME_CONTACTED + " DESC");
+				cursor = mResolver.query(uri, new String[] { Contacts.PHOTO_ID }, Contacts.PHOTO_ID + " NOT NULL AND "
+						+ Contacts.PHOTO_ID + "!=0", null, Contacts.STARRED + " DESC, " + Contacts.LAST_TIME_CONTACTED
+						+ " DESC");
 
 				if (cursor != null) {
 					while (cursor.moveToNext()) {
@@ -871,11 +863,9 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 						cacheBitmap(uri, baos.toByteArray(), false);
 						mMainThreadHandler.sendEmptyMessage(MESSAGE_PHOTOS_LOADED);
 					} else {
-						Log.v(TAG, "Cannot load photo " + uri);
 						cacheBitmap(uri, null, false);
 					}
 				} catch (Exception ex) {
-					Log.v(TAG, "Cannot load photo " + uri, ex);
 					cacheBitmap(uri, null, false);
 				}
 			}
@@ -930,7 +920,7 @@ class ContactPhotoManagerImpl extends ContactPhotoManager implements Callback {
 			// photo is the same regardless of mHires and mDarkTheme, so we
 			// shouldn't need to put
 			// the photo request on the queue twice.
-			return mId == that.mId && UriUtils.areEqual(mUri, that.mUri);
+			return mId == that.mId && (mUri == null ? that.mUri == null : mUri.equals(that.mUri));
 		}
 
 		public Object getKey() {

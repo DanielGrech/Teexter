@@ -24,14 +24,12 @@ public class TeexterDb extends SQLiteOpenHelper {
 		
 		db.execSQL(DbTable.INBOX.createSql());
 		db.execSQL(DbTable.SENT.createSql());
-		db.execSQL(DbTable.RECIPIENTS.createSql());
 	}
 	
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		db.execSQL(DbTable.INBOX.dropSql());
 		db.execSQL(DbTable.SENT.dropSql());
-		db.execSQL(DbTable.RECIPIENTS.dropSql());
 		
 		this.onCreate(db);
 	}

@@ -11,8 +11,6 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.ContactsContract;
-import android.provider.ContactsContract.Contacts;
-import android.provider.ContactsContract.Contacts.Photo;
 import android.provider.ContactsContract.PhoneLookup;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
@@ -27,19 +25,15 @@ public class ContactUtils {
 		Cursor cursor = null;
 		try {
 			ContentResolver cr = context.getContentResolver();
-			cursor = cr.query(Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phone)), new String[] {
-					PhoneLookup.LOOKUP_KEY, PhoneLookup.DISPLAY_NAME
-			}, null, null, null);
+			cursor = cr.query(Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phone)),
+					new String[] {
+							PhoneLookup.LOOKUP_KEY, PhoneLookup.DISPLAY_NAME, PhoneLookup.PHOTO_URI
+					}, null, null, null);
 
 			if (cursor != null && cursor.moveToFirst()) {
 				String lkpKey = cursor.getString(0);
 
-				Uri lookupUri = Contacts.lookupContact(cr, Uri.withAppendedPath(Contacts.CONTENT_LOOKUP_URI, lkpKey));
-
-				Uri photoUri = null;
-				if (lookupUri != null) {
-					photoUri = Uri.withAppendedPath(lookupUri, Photo.CONTENT_DIRECTORY);
-				}
+				Uri photoUri = UriUtils.parseUriOrNull(cursor.getString(2));
 
 				return new Contact(lkpKey, cursor.getString(1), phone, photoUri == null ? null : photoUri.toString());
 			} else {

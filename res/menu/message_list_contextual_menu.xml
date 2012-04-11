@@ -11,8 +11,8 @@
     <item
     	android:id="@+id/share"
     	android:enabled="true"
-        android:icon="@drawable/ic_action_share"
         android:showAsAction="ifRoom"
+        android:actionProviderClass="android.widget.ShareActionProvider"
         android:title="@string/share"
         android:titleCondensed="@string/share_condensed" />
     
@@ -31,6 +31,14 @@
         android:showAsAction="ifRoom"
         android:title="@string/favourite"
         android:titleCondensed="@string/favourite_condensed" />
+    
+    <item
+    	android:id="@+id/forward"
+    	android:enabled="true"
+        android:icon="@drawable/ic_action_forward"
+        android:showAsAction="ifRoom"
+        android:title="@string/forward"
+        android:titleCondensed="@string/forward_condensed" />
     
     <item
     	android:id="@+id/reply"

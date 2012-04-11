@@ -1,10 +1,8 @@
 <resources>
     <!-- Action bar -->
-    <style name="teexter_actionbar" parent="Widget.Sherlock.Light.ActionBar">
-        <item name="background">@drawable/actionbar_background</item>
+    <style name="teexter_actionbar" parent="android:style/Widget.Holo.Light.ActionBar">
         <item name="android:background">@drawable/actionbar_background</item>
     </style>  
-    
     
     <!-- Text -->    
     <style name="base_text" parent="android:style/TextAppearance.Medium.Inverse">
@@ -13,6 +11,13 @@
     
     <style name="base_text_small" parent="android:style/TextAppearance.Small.Inverse">
         
+    </style>
+    
+    <style name="ShadowText">
+        <item name="android:shadowColor">@color/text_shadow</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">1</item>
     </style>
     
     <style name="message_name" parent="base_text_small">
@@ -33,6 +38,29 @@
         <item name="android:textColor">@color/message_text</item>
         <item name="android:singleLine">false</item>
     </style>
+    
+    <style name="Subtitle" parent="ShadowText">
+        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textColor">@color/message_text</item>
+        <item name="android:capitalize">characters</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+    
+    <style name="ComposeHeading">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+        <item name="android:textColor">@color/compose_label_text</item>
+        <item name="android:paddingLeft">8dip</item>
+        <item name="android:layout_gravity">center_vertical</item>
+        <item name="android:gravity">center_vertical</item>
+     </style>
+
+    <style name="RecipientComposeHeading" parent="@style/ComposeHeading">
+        <item name="android:layout_marginRight">4dip</item>
+        <item name="android:paddingLeft">0dip</item>
+     </style>
     
     <!-- Widgets -->
     <style name="edit_text" parent="@android:style/Widget.EditText">

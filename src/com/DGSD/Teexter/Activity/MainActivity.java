@@ -7,16 +7,26 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.app.SearchManager;
-import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.text.TextUtils;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.SearchView;
+import android.widget.ShareActionProvider;
 import android.widget.Toast;
 
 import com.DGSD.Teexter.BroadcastType;
@@ -25,36 +35,38 @@ import com.DGSD.Teexter.R;
 import com.DGSD.Teexter.TxtMessage;
 import com.DGSD.Teexter.Fragment.BaseListFragment;
 import com.DGSD.Teexter.Fragment.BaseListFragment.OnMessageItemLongClickListener;
+import com.DGSD.Teexter.Fragment.DraftsFragment;
 import com.DGSD.Teexter.Fragment.FavouritesFragment;
 import com.DGSD.Teexter.Fragment.InboxFragment;
 import com.DGSD.Teexter.Fragment.SentFragment;
 import com.DGSD.Teexter.Service.DatabaseService;
-import com.DGSD.Teexter.Utils.DiagnosticUtils;
+import com.DGSD.Teexter.Utils.CopyUtils;
 import com.DGSD.Teexter.Utils.IntentUtils;
 import com.DGSD.Teexter.Utils.ToastUtils;
-import com.actionbarsherlock.view.ActionMode;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
-import com.actionbarsherlock.view.MenuItem;
-import com.actionbarsherlock.view.Window;
 import com.viewpagerindicator.TitlePageIndicator;
 import com.viewpagerindicator.TitleProvider;
 
 //TODO: Add 'Forward' option
 public class MainActivity extends BaseReceiverActivity implements DialogInterface.OnClickListener,
-		OnMessageItemLongClickListener {
+		OnMessageItemLongClickListener, SearchView.OnQueryTextListener {
+	private static final String CURRENT_TITLE = "_current_title";
+	
 	private static final int CONFIRM_DELETE_DIALOG = 0;
 
-	private static final int NUMBER_OF_PAGES = 3;
+	private static final int NUMBER_OF_PAGES = 4;
 
 	public static final int FAVOURITES_PAGE = 0;
 	public static final int INBOX_PAGE = 1;
 	public static final int SENT_PAGE = 2;
+	public static final int DRAFTS_PAGE = 3;
 
 	private ViewPager mPager;
 	private TitlePageIndicator mIndicator;
 	private PageAdapter mAdapter;
 	private ActionMode mLongPressActionMode;
+
+	private MenuItem mSearchMenuItem;
+	private SearchView mSearchView;
 
 	private int mLastMessageLongClicked = -1;
 
@@ -65,13 +77,17 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		setContentView(R.layout.activity_main);
 		setDefaultKeyMode(Activity.DEFAULT_KEYS_SEARCH_LOCAL);
 
+		if(savedInstanceState != null) {
+			getActionBar().setTitle(savedInstanceState.getCharSequence(CURRENT_TITLE, getString(R.string.app_name)));
+		}
+		
 		initView();
 	}
 
 	@Override
 	public void onStart() {
 		super.onStart();
-		setSupportProgressBarIndeterminateVisibility(false);
+		setProgressBarIndeterminateVisibility(false);
 	}
 
 	@Override
@@ -86,6 +102,13 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		nm.cancelAll();
 	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		
+		outState.putString(CURRENT_TITLE, getActionBar().getTitle().toString());
+	}
 
 	@Override
 	public void onPause() {
@@ -94,9 +117,15 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getSupportMenuInflater();
+		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.main_menu, menu);
 
+		mSearchMenuItem = menu.findItem(R.id.search);
+		mSearchView = (SearchView) mSearchMenuItem.getActionView();
+		mSearchView.setIconifiedByDefault(true);
+		mSearchView.setOnQueryTextListener(this);
+		mSearchView.setSubmitButtonEnabled(false);
+		mSearchView.setQueryHint("Search Messages");
 		return super.onCreateOptionsMenu(menu);
 	}
 
@@ -108,13 +137,14 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 				startActivity(intent);
 				return true;
 			case R.id.search:
-				onSearchRequested();
+
 				return true;
 		}
 
 		return false;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onNewIntent(Intent intent) {
 		setIntent(intent);
@@ -163,6 +193,7 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		return dialog;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onClick(DialogInterface dialog, int id) {
 		switch (id) {
@@ -205,6 +236,38 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		hideProgressBar();
 	}
 
+	public boolean onQueryTextChange(String newText) {
+		BaseListFragment frag = (BaseListFragment) mAdapter.getFragmentAt(mPager.getCurrentItem());
+
+		if (frag != null) {
+			if (TextUtils.isEmpty(newText)) {
+				getActionBar().setTitle(R.string.app_name);
+				frag.clearTextFilter();
+			} else {
+				getActionBar().setTitle("Search: '" + newText.toString() + "'");
+				frag.setFilterText(newText.toString());
+			}
+		}
+		return true;
+	}
+
+	public boolean onQueryTextSubmit(String query) {
+		if(mSearchMenuItem != null && mSearchMenuItem.isActionViewExpanded()) {
+			mSearchMenuItem.collapseActionView();
+		}
+		return false;
+	}
+
+	@Override
+	public void onBackPressed() {
+		BaseListFragment frag = (BaseListFragment) mAdapter.getFragmentAt(mPager.getCurrentItem());
+		if(frag.hasFilterApplied()) {
+			onQueryTextChange(null);
+		} else {
+			super.onBackPressed();
+		}
+	}
+	
 	private final class LongPressActionMode implements ActionMode.Callback {
 		private TxtMessage mMsg;
 		private int mFromType;
@@ -217,7 +280,7 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 
 		@Override
 		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-			getSupportMenuInflater().inflate(R.menu.message_list_contextual_menu, menu);
+			getMenuInflater().inflate(R.menu.message_list_contextual_menu, menu);
 
 			MenuItem item = menu.findItem(R.id.favourite);
 			if (mMsg.isFavourite()) {
@@ -225,6 +288,11 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 			} else {
 				item.setTitle(R.string.favourite);
 			}
+
+			MenuItem menuItem = menu.findItem(R.id.share);
+			ShareActionProvider mShareActionProvider = (ShareActionProvider) menuItem.getActionProvider();
+			mShareActionProvider.setShareIntent(IntentUtils.newShareTextIntent(mMsg.getSender(), mMsg.getMessage(),
+					"Share Message"));
 
 			mode.setTitle(mMsg.getMessage());
 
@@ -242,39 +310,41 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 			int id = item.getItemId();
 
 			switch (id) {
-				case R.id.delete:
+				case R.id.delete: {
 					showDialog(CONFIRM_DELETE_DIALOG);
 					return true;
-				case R.id.favourite:
+				}
+				case R.id.favourite: {
 					showProgressBar();
-					boolean isFav = !mMsg.isFavourite();
-					DatabaseService.requestToggleFavourite(MainActivity.this, mLastMessageLongClicked, isFav);
+					DatabaseService.requestToggleFavourite(MainActivity.this, mLastMessageLongClicked,
+							!mMsg.isFavourite());
 					mLongPressActionMode.finish();
 					return true;
-				case R.id.reply:
+				}
+				case R.id.reply: {
 					Intent intent = new Intent(MainActivity.this, ComposeActivity.class);
 					intent.putExtra(Extra.ID, mLastMessageLongClicked);
+					intent.putExtra(Extra.IS_REPLY, true);
 					startActivity(intent);
 					return true;
-				case R.id.share:
-					startActivity(IntentUtils.newShareTextIntent(mMsg.getSender(), mMsg.getMessage(), "Share Message"));
+				}
+				case R.id.forward: {
+					Intent intent = new Intent(MainActivity.this, ComposeActivity.class);
+					intent.putExtra(Extra.ID, mLastMessageLongClicked);
+					intent.putExtra(Extra.IS_FORWARD, true);
+					startActivity(intent);
 					return true;
-				case R.id.copy:
+				}
+				case R.id.copy: {
 					String msg = mMsg.getMessage();
-					if (DiagnosticUtils.ANDROID_API_LEVEL >= 11) {
-						String bestName = (mMsg.getContact() == null || mMsg.getContact().name == null) ? mMsg
-								.getSender() : mMsg.getContact().name;
+					String bestName = (mMsg.getContact() == null || mMsg.getContact().name == null) ? mMsg.getSender()
+							: mMsg.getContact().name;
 
-						android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-						cm.setPrimaryClip(ClipData.newPlainText("Text Message from " + bestName, msg));
-					} else {
-						android.text.ClipboardManager cm = (android.text.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-						cm.setText(msg);
-					}
-
+					CopyUtils.copyText(MainActivity.this, "Text Message from " + bestName, msg);
 					ToastUtils.show(MainActivity.this, "Copied to clipboard", Toast.LENGTH_SHORT);
 					mLongPressActionMode.finish();
 					return true;
+				}
 			}
 			return false;
 		}
@@ -285,9 +355,17 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 		}
 	}
 
-	private class PageAdapter extends FragmentPagerAdapter implements TitleProvider {
+	/**
+	 * Largely based on the support library FragmentPagerAdapter, but we can pull specific
+	 * fragments out given an index.  
+	 * @author daniel
+	 */
+	private class PageAdapter extends PagerAdapter implements TitleProvider {
+		private final FragmentManager mFragmentManager;
+		private FragmentTransaction mCurTransaction = null;
+
 		public PageAdapter(FragmentManager fm) {
-			super(fm);
+			mFragmentManager = fm;
 		}
 
 		@Override
@@ -297,22 +375,39 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 
 		@Override
 		public Object instantiateItem(ViewGroup container, int position) {
-			Fragment f = (Fragment) super.instantiateItem(container, position);
-
-			if (f instanceof BaseListFragment) {
-				((BaseListFragment) f).setOnMessageItemLongClickListener(MainActivity.this);
+			if (mCurTransaction == null) {
+				mCurTransaction = mFragmentManager.beginTransaction();
 			}
 
-			return f;
+			// Do we already have this fragment?
+			String name = makeFragmentTag(position);
+			Fragment fragment = mFragmentManager.findFragmentByTag(name);
+			if (fragment != null) {
+				mCurTransaction.attach(fragment);
+			} else {
+				fragment = getItem(position);
+				mCurTransaction.add(container.getId(), fragment, makeFragmentTag(position));
+			}
+
+			if (fragment instanceof BaseListFragment) {
+				((BaseListFragment) fragment).setOnMessageItemLongClickListener(MainActivity.this);
+			}
+
+			return fragment;
 		}
 
-		@Override
+		public Fragment getFragmentAt(int pos) {
+			return mFragmentManager.findFragmentByTag(makeFragmentTag(pos));
+		}
+
 		public Fragment getItem(int pos) {
 			switch (pos) {
 				case INBOX_PAGE:
 					return InboxFragment.newInstance();
 				case SENT_PAGE:
 					return SentFragment.newInstance();
+				case DRAFTS_PAGE:
+					return DraftsFragment.newInstance();
 				case FAVOURITES_PAGE:
 					return FavouritesFragment.newInstance();
 			}
@@ -327,11 +422,52 @@ public class MainActivity extends BaseReceiverActivity implements DialogInterfac
 					return "Inbox";
 				case SENT_PAGE:
 					return "Sent";
+				case DRAFTS_PAGE:
+					return "Drafts";
 				case FAVOURITES_PAGE:
 					return "Favourites";
 			}
 
 			return null;
 		}
+
+		public void startUpdate(View container) {
+		}
+
+		@Override
+		public void destroyItem(View container, int position, Object object) {
+			if (mCurTransaction == null) {
+				mCurTransaction = mFragmentManager.beginTransaction();
+			}
+
+			mCurTransaction.detach((Fragment) object);
+		}
+
+		@Override
+		public void finishUpdate(View container) {
+			if (mCurTransaction != null) {
+				mCurTransaction.commit();
+				mCurTransaction = null;
+				mFragmentManager.executePendingTransactions();
+			}
+		}
+
+		@Override
+		public boolean isViewFromObject(View view, Object object) {
+			return ((Fragment) object).getView() == view;
+		}
+
+		@Override
+		public Parcelable saveState() {
+			return null;
+		}
+
+		@Override
+		public void restoreState(Parcelable state, ClassLoader loader) {
+		}
+	}
+
+	private static String makeFragmentTag(int index) {
+		return "android:switcher:" + index;
 	}
 }

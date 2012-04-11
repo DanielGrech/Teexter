@@ -9,6 +9,14 @@
         android:titleCondensed="@string/send_condensed" />
     
     <item
+    	android:id="@+id/forward"
+    	android:enabled="true"
+        android:icon="@drawable/ic_action_forward"
+        android:showAsAction="never"
+        android:title="@string/forward"
+        android:titleCondensed="@string/forward_condensed" />
+    
+    <item
         android:id="@+id/delete"
         android:enabled="true"
         android:icon="@drawable/ic_action_delete"
@@ -20,6 +28,7 @@
     	android:id="@+id/share"
     	android:enabled="true"
         android:icon="@drawable/ic_action_share"
+        android:actionProviderClass="android.widget.ShareActionProvider"
         android:showAsAction="never"
         android:title="@string/share"
         android:titleCondensed="@string/share_condensed" />

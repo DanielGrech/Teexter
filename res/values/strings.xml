@@ -12,8 +12,8 @@
 	<string name="cancel">Cancel</string>
 	<string name="are_you_sure">Are you sure</string>
 	<string name="message_delete_are_you_sure">Your message will be permanently deleted</string>
-	<string name="delete">Delete</string>
-	<string name="delete_condensed">@string/delete</string>
+	<string name="delete">Delete message</string>
+	<string name="delete_condensed">Delete</string>
 	<string name="unfavourite">Unfavourite</string>
 	<string name="favourite">Favourite</string>
 	<string name="favourite_condensed">@string/favourite</string>
@@ -25,12 +25,17 @@
 	<string name="send_condensed">@string/send</string>
 	<string name="save">Save</string>
 	<string name="save_condensed">@string/save</string>
-	<string name="copy">Copy</string>
-	<string name="copy_condensed">@string/copy</string>
+	<string name="copy">Copy message text</string>
+	<string name="copy_condensed">Copy</string>
+	<string name="forward">Forward message</string>
+	<string name="forward_condensed">Forward</string>
 	<string name="search_messages_hint">Search Messages</string>
 	<string name="search_messages_description">@string/search_messages_hint</string>
 	<string name="to_hint">To:</string>
 	<string name="message_hint">Message</string>
 	<string name="compose">Compose</string>
 	<string name="expand">Expand</string>
+	<string name="reply_subtitle">Reply to message:</string>
+	<string name="chips_waiting_for_directory_result">Waiting for more contacts</string>
+	<string name="more">More</string>
 </resources>

@@ -63,23 +63,47 @@
             </FrameLayout>
         </RelativeLayout>
 
-        <!-- <com.DGSD.Teexter.UI.StatefulEditText
-            android:id="@+id/recipients"
+        <TextView
+            android:id="@+id/reply_subtitle"
+            style="@style/Subtitle"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="@string/reply_subtitle" />
+        
+        <LinearLayout
+            style="@style/edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:layout_marginBottom="6dip"
-            android:gravity="top|left"
-            android:hint="@string/to_hint" /> -->
+            android:addStatesFromChildren="true"
+            android:gravity="center_vertical" >
 
-		<include layout="@layout/recipients_editor" />
+            <TextView
+                android:id="@+id/to_label"
+                style="@style/RecipientComposeHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:contentDescription="@string/to_hint"
+                android:text="@string/to_hint" />
+
+            <com.DGSD.Teexter.UI.Recipient.RecipientEditTextView
+                android:id="@+id/recipients_editor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:gravity="center_vertical" />
+        </LinearLayout>
 
         <com.DGSD.Teexter.UI.StatefulEditText
             android:id="@+id/new_message"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
             android:layout_marginBottom="6dip"
-            android:inputType="textMultiLine"
+            android:layout_weight="1"
             android:gravity="top|left"
             android:hint="@string/message_hint"
             android:minLines="5" />

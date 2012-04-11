@@ -15,4 +15,6 @@
     <color name="edit_text_cursor">#A6A6A6</color>
     <color name="edit_text_border">#D6D6D6</color>
     <color name="image_placeholder">#DDDDDD</color>
+    <color name="text_shadow">#FFFFFF</color>
+    <color name="compose_label_text">#AAAAAA</color>
 </resources>

@@ -4,7 +4,6 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
 
 import com.DGSD.Teexter.R;
 import com.DGSD.Teexter.Activity.MainActivity;
@@ -25,12 +24,12 @@ public class FavouritesFragment extends BaseListFragment {
 	}
 
 	@Override
-	protected SimpleCursorAdapter onCreateAdapter() {
-		return new SimpleCursorAdapter(getActivity(), R.layout.inbox_list_item, null, new String[] {
+	protected FilterableMessageAdapter onCreateAdapter() {
+		return new FilterableMessageAdapter(getActivity(), R.layout.inbox_list_item, null, new String[] {
 			DbField.ID.getName()
 		}, new int[] {
 			R.id.message
-		}, 0);
+		});
 	}
 
 	@Override

@@ -2,20 +2,20 @@ package com.DGSD.Teexter.Activity;
 
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.Window;
 
 import com.DGSD.Teexter.BroadcastType;
 import com.DGSD.Teexter.Receiver.PortableReceiver;
 import com.DGSD.Teexter.Receiver.Receiver;
 import com.DGSD.Teexter.Service.DatabaseService;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.Window;
 
 /**
  * 
  * @author Daniel Grech
  */
-public abstract class BaseReceiverActivity extends SherlockFragmentActivity implements
+public abstract class BaseReceiverActivity extends FragmentActivity implements
 		Receiver {
 	public static final String TAG = BaseReceiverActivity.class.getSimpleName();
 
@@ -47,9 +47,9 @@ public abstract class BaseReceiverActivity extends SherlockFragmentActivity impl
 		super.onStart();
 		
 		if (mLoadingCounter > 0) {
-			setSupportProgressBarIndeterminateVisibility(true);
+			setProgressBarIndeterminateVisibility(true);
 		} else {
-			setSupportProgressBarIndeterminateVisibility(false);
+			setProgressBarIndeterminateVisibility(false);
 		}
 	}
 	
@@ -87,7 +87,7 @@ public abstract class BaseReceiverActivity extends SherlockFragmentActivity impl
 
 	public void showProgressBar() {
 		mLoadingCounter++;
-		setSupportProgressBarIndeterminateVisibility(true);
+		setProgressBarIndeterminateVisibility(true);
 	}
 
 	public void hideProgressBar() {
@@ -99,7 +99,7 @@ public abstract class BaseReceiverActivity extends SherlockFragmentActivity impl
 
 		// Check if we are waiting for any other progressable items.
 		if (mLoadingCounter == 0) {
-			setSupportProgressBarIndeterminateVisibility(false);
+			setProgressBarIndeterminateVisibility(false);
 		}
 	}
 

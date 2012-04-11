@@ -32,6 +32,24 @@ public class DatabaseService extends IntentService {
 				}
 				break;
 			}
+			case RequestType.INSERT_MSG_IN_SENT: {
+				if (doInsert(this, MessagesProvider.SENT_URI,
+						(ContentValues) intent.getParcelableExtra(Extra.CONTENT_VALUES)) != null) {
+					broadcastResult(RequestType.INSERT_MSG_IN_SENT);
+				} else {
+					broadcastError(RequestType.INSERT_MSG_IN_SENT);
+				}
+				break;
+			}
+			case RequestType.INSERT_MSG_IN_DRAFT: {
+				if (doInsert(this, MessagesProvider.SENT_URI,
+						(ContentValues) intent.getParcelableExtra(Extra.CONTENT_VALUES)) != null) {
+					broadcastResult(RequestType.INSERT_MSG_IN_DRAFT);
+				} else {
+					broadcastError(RequestType.INSERT_MSG_IN_DRAFT);
+				}
+				break;
+			}
 			case RequestType.TOGGLE_FAVOURITE: {
 				ContentValues values = new ContentValues();
 				values.put(DbField.FAVOURITE.getName(), intent.getBooleanExtra(Extra.FAVOURITE, false) ? 1 : 0);
@@ -49,6 +67,29 @@ public class DatabaseService extends IntentService {
 					broadcastError(RequestType.DELETE_INBOX);
 				} else {
 					broadcastResult(RequestType.DELETE_INBOX);
+				}
+			}
+			
+			case RequestType.DELETE_DRAFT: {
+				String sel = null;
+				String[] selArgs = null;
+				
+				String id = String.valueOf(intent.getIntExtra(Extra.ID, -1));
+				String addr = intent.getStringExtra(Extra.ADDRESS);
+				String msg = intent.getStringExtra(Extra.TEXT);
+				
+				if(id != null) {
+					sel = DbField.ID + "=?";
+					selArgs = new String[]{id};
+				} else {
+					sel = DbField.NUMBER + "=? AND " + DbField.MESSAGE + " =?";
+					selArgs = new String[]{addr, msg};
+				}
+				
+				if (doDelete(this, MessagesProvider.SENT_URI, sel, selArgs) != 1) {
+					broadcastError(RequestType.DELETE_DRAFT);
+				} else {
+					broadcastResult(RequestType.DELETE_DRAFT);
 				}
 			}
 		}
@@ -94,11 +135,39 @@ public class DatabaseService extends IntentService {
 
 		c.startService(intent);
 	}
+	
+	public static synchronized void requestInsertSent(Context c, ContentValues values) {
+		Intent intent = new Intent(c, DatabaseService.class);
+		intent.putExtra(Extra.DATA_TYPE, RequestType.INSERT_MSG_IN_SENT);
+		intent.putExtra(Extra.CONTENT_VALUES, values);
+		
+		c.startService(intent);
+	}
 
+	public static synchronized void requestInsertDraft(Context c, ContentValues values) {
+		Intent intent = new Intent(c, DatabaseService.class);
+		intent.putExtra(Extra.DATA_TYPE, RequestType.INSERT_MSG_IN_DRAFT);
+		intent.putExtra(Extra.CONTENT_VALUES, values);
+		
+		c.startService(intent);
+	}
+	
+	public static synchronized void requestRemoveDraft(Context c, String address, String msg) {
+		Intent intent = new Intent(c, DatabaseService.class);
+		intent.putExtra(Extra.DATA_TYPE, RequestType.DELETE_DRAFT);
+		intent.putExtra(Extra.ADDRESS, address);
+		intent.putExtra(Extra.TEXT, msg);
+		
+		c.startService(intent);
+	}
+	
 	public static class RequestType {
 		public static final int INSERT_MSG_IN_INBOX = 0x1;
 		public static final int TOGGLE_FAVOURITE = 0x2;
 		public static final int DELETE_INBOX = 0x3;
+		public static final int INSERT_MSG_IN_SENT = 0x4;
+		public static final int INSERT_MSG_IN_DRAFT = 0x5;
+		public static final int DELETE_DRAFT = 0x6;
 	}
 
 }

@@ -18,6 +18,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
+import com.DGSD.Teexter.Activity.MainActivity;
+
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -110,7 +113,7 @@ public class IntentUtils {
         shareIntent.putExtra(Intent.EXTRA_TEXT, message);
         shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject);
         shareIntent.setType(MIME_TYPE_TEXT);
-        return Intent.createChooser(shareIntent, chooserDialogTitle);
+        return shareIntent;
     }
 
     public static Intent newMapsIntent(String address, String placeTitle) {
@@ -188,5 +191,16 @@ public class IntentUtils {
      */
     public static Intent newCallNumberIntent(String phoneNumber) {
         return new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + phoneNumber.replace(" ", "")));
+    }
+    
+    /**
+     * Go to the predefined home class
+     * @param a
+     */
+    public static void goHome(Activity a) {
+    	Intent i = new Intent(a, MainActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        a.startActivity(i);
+        a.finish();
     }
 }

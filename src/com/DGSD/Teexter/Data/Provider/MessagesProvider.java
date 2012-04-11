@@ -31,15 +31,10 @@ public class MessagesProvider extends ContentProvider {
 	private static final int INBOX_WITH_ID = 0x2;
 	private static final int SENT = 0x3;
 	private static final int SENT_WITH_ID = 0x4;
-	private static final int RECIPIENTS = 0x5;
-	private static final int RECIPIENTS_WITH_ID = 0x6;
 	private static final int SEARCH_MANAGER = 0x7;
-	
 
 	public static final Uri INBOX_URI = Uri.withAppendedPath(BASE_URI, "inbox");
 	public static final Uri SENT_URI = Uri.withAppendedPath(BASE_URI, "sent");
-	public static final Uri RECIPIENTS_URI = Uri.withAppendedPath(BASE_URI, "recipients");
-	
 
 	private TeexterDb mDb;
 
@@ -50,8 +45,6 @@ public class MessagesProvider extends ContentProvider {
 		mURIMatcher.addURI(AUTHORITY, "inbox/*", INBOX_WITH_ID);
 		mURIMatcher.addURI(AUTHORITY, "sent", SENT);
 		mURIMatcher.addURI(AUTHORITY, "sent/*", SENT_WITH_ID);
-		mURIMatcher.addURI(AUTHORITY, "recipients", RECIPIENTS);
-		mURIMatcher.addURI(AUTHORITY, "recipients/*", RECIPIENTS_WITH_ID);
 	}
 
 	@Override
@@ -85,29 +78,27 @@ public class MessagesProvider extends ContentProvider {
 			switch (type) {
 				case SEARCH_MANAGER:
 					String searchTerm = uri.getLastPathSegment();
-					
+
 					StringBuilder rawQuery = new StringBuilder();
-					rawQuery.append("SELECT ")
-							.append(DbField.ID).append(", ")
+					rawQuery.append("SELECT ").append(DbField.ID).append(", ")
 							.append(DbField.MESSAGE + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1).append(",")
 							.append(DbField.DISPLAY_NAME + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2).append(",")
 							.append(DbField.MESSAGE + " AS " + SearchManager.SUGGEST_COLUMN_QUERY).append(",")
 							.append(DbField.ID + " AS " + SearchManager.SUGGEST_COLUMN_INTENT_EXTRA_DATA)
-							.append(" FROM ").append(DbTable.INBOX)
-							.append(" WHERE ").append(DbField.DISPLAY_NAME).append(" LIKE '%" + searchTerm + "%'")
-							.append(" OR ").append(DbField.MESSAGE).append(" LIKE '%" + searchTerm + "%'");
-					
-					rawQuery.append(" UNION SELECT ")
-							.append(DbField.ID).append(", ")
+							.append(" FROM ").append(DbTable.INBOX).append(" WHERE ").append(DbField.DISPLAY_NAME)
+							.append(" LIKE '%" + searchTerm + "%'").append(" OR ").append(DbField.MESSAGE)
+							.append(" LIKE '%" + searchTerm + "%'");
+
+					rawQuery.append(" UNION SELECT ").append(DbField.ID).append(", ")
 							.append(DbField.MESSAGE + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1).append(",")
 							.append("'' AS " + SearchManager.SUGGEST_COLUMN_TEXT_2).append(",")
 							.append(DbField.MESSAGE + " AS " + SearchManager.SUGGEST_COLUMN_QUERY).append(",")
 							.append(DbField.ID + " AS " + SearchManager.SUGGEST_COLUMN_INTENT_EXTRA_DATA)
-							.append(" FROM ").append(DbTable.SENT)
-							.append(" WHERE ").append(DbField.MESSAGE).append(" LIKE '%" + searchTerm + "%'");
-					
+							.append(" FROM ").append(DbTable.SENT).append(" WHERE ").append(DbField.MESSAGE)
+							.append(" LIKE '%" + searchTerm + "%'");
+
 					Cursor cursor = mDb.getReadableDatabase().rawQuery(rawQuery.toString(), null);
-					
+
 					cursor.setNotificationUri(getContext().getContentResolver(), uri);
 
 					return cursor;
@@ -117,11 +108,8 @@ public class MessagesProvider extends ContentProvider {
 				case SENT:
 					qb.setTables(DbTable.SENT.getName());
 					break;
-				case RECIPIENTS:
-					qb.setTables(DbTable.RECIPIENTS.getName());
-					break;
 			}
-			
+
 			Cursor cursor = qb.query(mDb.getReadableDatabase(), proj, sel, selArgs, null, null, sort);
 			cursor.setNotificationUri(getContext().getContentResolver(), uri);
 
@@ -139,7 +127,7 @@ public class MessagesProvider extends ContentProvider {
 	public Uri insert(Uri uri, ContentValues values) {
 		try {
 			int type = mURIMatcher.match(uri);
-			if (type == UriMatcher.NO_MATCH) {
+			if (!Arrays.asList(INBOX, SENT).contains(type)) {
 				if (BuildConfig.DEBUG) {
 					Log.w(TAG, "No match for URI: " + uri);
 				}
@@ -155,9 +143,6 @@ public class MessagesProvider extends ContentProvider {
 					break;
 				case SENT:
 					id = db.insertOrThrow(DbTable.SENT.getName(), null, values);
-					break;
-				case RECIPIENTS:
-					id = db.insertOrThrow(DbTable.RECIPIENTS.getName(), null, values);
 					break;
 			}
 
@@ -182,7 +167,7 @@ public class MessagesProvider extends ContentProvider {
 	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 		try {
 			int type = mURIMatcher.match(uri);
-			if (!Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID, RECIPIENTS_WITH_ID).contains(type)) {
+			if (!Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID).contains(type)) {
 				if (BuildConfig.DEBUG) {
 					Log.w(TAG, "No match for URI: " + uri);
 				}
@@ -200,24 +185,19 @@ public class MessagesProvider extends ContentProvider {
 				case SENT_WITH_ID:
 					table = DbTable.SENT.getName();
 					break;
-				case RECIPIENTS_WITH_ID:
-					table = DbTable.RECIPIENTS.getName();
-					break;
 			}
 
-			
-			
 			int rowsAffected = 0;
 			String id = uri.getLastPathSegment();
 			if (TextUtils.isEmpty(selection)) {
-				rowsAffected = db.update(table, values, new StringBuilder()
-						.append(DbField.ID).append("=").append(id).toString(), null);
+				rowsAffected = db.update(table, values, new StringBuilder().append(DbField.ID).append("=").append(id)
+						.toString(), null);
 			} else {
-				rowsAffected = db.update(table, values, new StringBuilder()
-						.append(selection).append(" and ").append(DbField.ID).append("=").append(id).toString(),
-						selectionArgs);
+				rowsAffected = db.update(table, values,
+						new StringBuilder().append(selection).append(" and ").append(DbField.ID).append("=").append(id)
+								.toString(), selectionArgs);
 			}
-			
+
 			getContext().getContentResolver().notifyChange(uri, null);
 			return rowsAffected;
 		} catch (Exception e) {
@@ -233,7 +213,7 @@ public class MessagesProvider extends ContentProvider {
 	public int delete(Uri uri, String sel, String[] selArgs) {
 		try {
 			int type = mURIMatcher.match(uri);
-			if (!Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID, RECIPIENTS_WITH_ID).contains(type)) {
+			if (!Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID, SENT, INBOX).contains(type)) {
 				if (BuildConfig.DEBUG) {
 					Log.w(TAG, "No match for URI: " + uri);
 				}
@@ -245,27 +225,31 @@ public class MessagesProvider extends ContentProvider {
 
 			String table = null;
 			switch (type) {
+				case INBOX:
 				case INBOX_WITH_ID:
 					table = DbTable.INBOX.getName();
 					break;
+				case SENT:
 				case SENT_WITH_ID:
 					table = DbTable.SENT.getName();
-					break;
-				case RECIPIENTS_WITH_ID:
-					table = DbTable.RECIPIENTS.getName();
 					break;
 			}
 
 			String id = uri.getLastPathSegment();
 			int rowsAffected = 0;
-			if (TextUtils.isEmpty(sel)) {
-				rowsAffected = db.delete(table, new StringBuilder().append(DbField.ID).append("=").append(id)
-						.toString(), null);
+
+			if (Arrays.asList(INBOX_WITH_ID, SENT_WITH_ID).contains(type)) {
+				if (TextUtils.isEmpty(sel)) {
+					rowsAffected = db.delete(table, new StringBuilder().append(DbField.ID).append("=").append(id)
+							.toString(), null);
+				} else {
+					rowsAffected = db.delete(table, new StringBuilder().append(sel).append(" and ").append(DbField.ID)
+							.append("=").append(id).toString(), selArgs);
+				}
 			} else {
-				rowsAffected = db.delete(table, new StringBuilder().append(sel)
-						.append(" and ").append(DbField.ID).append("=").append(id).toString(), selArgs);
+				rowsAffected = db.delete(table, sel, selArgs);
 			}
-			
+
 			getContext().getContentResolver().notifyChange(uri, null);
 			return rowsAffected;
 		} catch (Exception e) {

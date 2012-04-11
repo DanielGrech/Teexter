@@ -1,11 +1,10 @@
 package com.DGSD.Teexter.Service;
 
-import java.sql.SQLDataException;
-
 import android.app.IntentService;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.net.Uri;
 import android.util.Log;
 
@@ -46,6 +45,7 @@ public class ImportSmsService extends IntentService {
 					values.put(DbField.DISPLAY_NAME.getName(), contact.name);
 				}
 
+				values.put(DbField.NUMBER.getName(), cursor.getString(0));
 				values.put(DbField.TIME.getName(), cursor.getLong(1));
 				values.put(DbField.READ.getName(), cursor.getInt(2));
 				values.put(DbField.MESSAGE.getName(), cursor.getString(3));
@@ -60,7 +60,7 @@ public class ImportSmsService extends IntentService {
 				
 
 				if (DatabaseService.doInsert(this, MessagesProvider.INBOX_URI, values) == null) {
-					throw new SQLDataException("No record was inserted for sms: " + cursor.getString(4));
+					throw new SQLException("No record was inserted for sms: " + cursor.getString(4));
 				}
 			} while (cursor.moveToNext());
 		}

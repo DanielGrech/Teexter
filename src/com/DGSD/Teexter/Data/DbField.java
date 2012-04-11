@@ -12,6 +12,9 @@ public class DbField {
 	public static final DbField FAVOURITE = new DbField("_favourite", "integer", "DEFAULT 0");
 	public static final DbField SENT_MESSAGE_ID = new DbField("_sent_message_id", "integer");
 	public static final DbField READ = new DbField("_read", "integer");
+	public static final DbField THREAD_COUNT = new DbField("_thread_count", "integer");
+	public static final DbField IN_REPLY_TO_ID = new DbField("_in_reply_to_id", "integer");
+	public static final DbField IS_DRAFT = new DbField("_is_draft", "integer");
 	
 	private String name;
 	private String type;

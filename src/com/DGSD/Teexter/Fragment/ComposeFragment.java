@@ -1,44 +1,56 @@
 package com.DGSD.Teexter.Fragment;
 
-import java.io.IOException;
-import java.io.InputStream;
-
+import android.app.Fragment;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract.Contacts;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
+import android.telephony.PhoneNumberUtils;
+import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AutoCompleteTextView;
+import android.widget.ShareActionProvider;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.DGSD.Teexter.BuildConfig;
 import com.DGSD.Teexter.Extra;
 import com.DGSD.Teexter.R;
+import com.DGSD.Teexter.Activity.ComposeActivity;
 import com.DGSD.Teexter.Data.DbField;
 import com.DGSD.Teexter.Data.Provider.MessagesProvider;
-import com.DGSD.Teexter.Fragment.BaseListFragment.CursorCols;
 import com.DGSD.Teexter.UI.ExpandableTextView;
 import com.DGSD.Teexter.UI.QuickContactBadge;
-import com.DGSD.Teexter.UI.RecipientsAdapter;
-import com.DGSD.Teexter.UI.RecipientsEditor;
 import com.DGSD.Teexter.UI.StatefulEditText;
-import com.actionbarsherlock.app.SherlockFragment;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
+import com.DGSD.Teexter.UI.Recipient.RecipientAdapter;
+import com.DGSD.Teexter.UI.Recipient.RecipientEditTextView;
+import com.DGSD.Teexter.UI.Recipient.RecipientEditorTokenizer;
+import com.DGSD.Teexter.Utils.ContactPhotoManager;
+import com.DGSD.Teexter.Utils.CopyUtils;
+import com.DGSD.Teexter.Utils.IntentUtils;
+import com.DGSD.Teexter.Utils.SmsUtils;
+import com.DGSD.Teexter.Utils.ToastUtils;
+import com.DGSD.Teexter.Utils.UriUtils;
 
-public class ComposeFragment extends SherlockFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class ComposeFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 	private static final String TAG = ComposeFragment.class.getSimpleName();
 
 	private int mResponseToMessageId = -1;
+	private boolean mIsReply = false;
+	private boolean mIsForward = false;
 
-	private RecipientsEditor mRecipientsInput;
+	private RecipientEditTextView mRecipientsInput;
 	private StatefulEditText mMessageInput;
 
 	// Top message view
@@ -46,15 +58,25 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 	private TextView mDisplayNameView;
 	private ExpandableTextView mReplyToMessageView;
 	private QuickContactBadge mQcb;
+	protected ContactPhotoManager mPhotoLoader;
 
-	public static ComposeFragment newInstance(int msgId) {
+	private OnFavouriteListener mOnFavouriteListener;
+	private OnDeleteListener mOnDeleteListener;
+
+	private boolean mIsFavourite = false;
+
+	public static ComposeFragment newInstance(int msgId, boolean isReply, boolean isForward) {
 		ComposeFragment frag = new ComposeFragment();
 
+		Bundle args = new Bundle();
 		if (msgId != -1) {
-			Bundle args = new Bundle();
 			args.putInt(Extra.ID, msgId);
-			frag.setArguments(args);
 		}
+
+		args.putBoolean(Extra.IS_REPLY, isReply);
+		args.putBoolean(Extra.IS_FORWARD, isForward);
+
+		frag.setArguments(args);
 
 		return frag;
 	}
@@ -66,6 +88,8 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 
 		if (getArguments() != null) {
 			mResponseToMessageId = getArguments().getInt(Extra.ID, -1);
+			mIsReply = getArguments().getBoolean(Extra.IS_REPLY, false);
+			mIsForward = getArguments().getBoolean(Extra.IS_FORWARD, false);
 		}
 	}
 
@@ -82,10 +106,25 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 			mQcb = (QuickContactBadge) wrapper.findViewById(R.id.quick_contact_badge);
 		} else {
 			v.findViewById(R.id.in_reply_to_message).setVisibility(View.GONE);
+			v.findViewById(R.id.reply_subtitle).setVisibility(View.GONE);
 		}
 
-		mRecipientsInput = (RecipientsEditor) v.findViewById(R.id.recipients_editor);
-		mRecipientsInput.setAdapter(new RecipientsAdapter(getActivity()));
+		mRecipientsInput = (RecipientEditTextView) v.findViewById(R.id.recipients_editor);
+		mRecipientsInput.setAdapter(new RecipientAdapter(getActivity(), (RecipientEditTextView) mRecipientsInput));
+		mRecipientsInput.setTokenizer(new RecipientEditorTokenizer());
+		mRecipientsInput.setValidator(new AutoCompleteTextView.Validator() {
+			@Override
+			public boolean isValid(CharSequence text) {
+				return text == null ? false : PhoneNumberUtils.isWellFormedSmsAddress(text.toString());
+
+			}
+
+			@Override
+			public CharSequence fixText(CharSequence invalidText) {
+				return invalidText;
+			}
+		});
+
 		mMessageInput = (StatefulEditText) v.findViewById(R.id.new_message);
 
 		return v;
@@ -96,22 +135,96 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 		super.onActivityCreated(savedInstanceState);
 
 		if (mResponseToMessageId != -1) {
+			mPhotoLoader = ContactPhotoManager.getInstance(getActivity());
 			getLoaderManager().initLoader(0, null, this);
 		}
 	}
-	
+
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		inflater.inflate(R.menu.compose_menu, menu);
-		
-		if(getArguments() == null || getArguments().getInt(Extra.ID, -1) == -1) {
+
+		if (getArguments() == null || getArguments().getInt(Extra.ID, -1) == -1) {
 			menu.findItem(R.id.favourite).setVisible(false);
 			menu.findItem(R.id.share).setVisible(false);
 			menu.findItem(R.id.delete).setVisible(false);
 			menu.findItem(R.id.copy).setVisible(false);
+			menu.findItem(R.id.forward).setVisible(false);
+		} else {
+			MenuItem menuItem = menu.findItem(R.id.share);
+			ShareActionProvider mShareActionProvider = (ShareActionProvider) menuItem.getActionProvider();
+			String displayName = mDisplayNameView.getText().toString();
+			mShareActionProvider.setShareIntent(IntentUtils.newShareTextIntent("Text from " + displayName,
+					mReplyToMessageView.getText().toString(), "Share text from " + displayName));
 		}
-		
+
 		super.onCreateOptionsMenu(menu, inflater);
+	}
+
+	@Override
+	public void onDestroyView() {
+		super.onDestroyView();
+		mOnDeleteListener = null;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		switch (item.getItemId()) {
+			case R.id.favourite: {
+				if (mOnFavouriteListener != null) {
+					mOnFavouriteListener.onToggleFavourite(mResponseToMessageId);
+				}
+				return true;
+			}
+			case R.id.delete: {
+				if (mOnDeleteListener != null) {
+					mOnDeleteListener.onDelete(mResponseToMessageId);
+				}
+				return true;
+			}
+			case R.id.copy: {
+				String displayName = mDisplayNameView.getText().toString();
+				CopyUtils.copyText(getActivity(), "Text from " + displayName, mReplyToMessageView.getText().toString());
+				ToastUtils.show(getActivity(), "Copied text from " + displayName, Toast.LENGTH_SHORT);
+				return true;
+			}
+			case R.id.forward: {
+				Intent intent = new Intent(getActivity(), ComposeActivity.class);
+				intent.putExtra(Extra.ID, mResponseToMessageId);
+				intent.putExtra(Extra.IS_FORWARD, true);
+				startActivity(intent);
+				return true;
+			}
+			case R.id.send: {
+				if (mRecipientsInput.hasFocus()) {
+					mRecipientsInput.clearFocus();
+				}
+
+				if (!mRecipientsInput.isValid()) {
+					ToastUtils.show(getActivity(), "Some numbers are invalid", Toast.LENGTH_SHORT);
+					return true;
+				}
+
+				String[] addresses = mRecipientsInput.getAddresses();
+				if (addresses == null || addresses.length == 0) {
+					mRecipientsInput.setError("Please enter a recipient");
+					return true;
+				}
+
+				if (TextUtils.isEmpty(mMessageInput.getText())) {
+					mMessageInput.setError("Please enter a message");
+					return true;
+				}
+
+				SmsUtils.sendMessage(getActivity(), addresses, mMessageInput.getText().toString(),
+						mResponseToMessageId, false);
+				getActivity().finish();
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	@Override
@@ -133,9 +246,27 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 			mDisplayNameView.setText(cursor.getString(cursor.getColumnIndex(DbField.DISPLAY_NAME.getName())));
 			mReplyToMessageView.setText(cursor.getString(cursor.getColumnIndex(DbField.MESSAGE.getName())));
 
+			mIsFavourite = cursor.getInt(cursor.getColumnIndex(DbField.FAVOURITE.getName())) == 1;
+
+			if (mIsReply) {
+				String num = cursor.getString(cursor.getColumnIndex(DbField.NUMBER.getName()));
+				if (num == null) {
+					if (BuildConfig.DEBUG) {
+						Log.w(TAG, "No number found");
+					}
+				} else {
+					mRecipientsInput.append(num + ", ");
+				}
+			} else if (mIsForward) {
+				mMessageInput.setText(cursor.getString(cursor.getColumnIndex(DbField.MESSAGE.getName())));
+			}
+
 			String lookupKey = cursor.getString(cursor.getColumnIndex(DbField.CONTACT_LOOKUP_ID.getName()));
-			Uri lookupUri = Contacts.CONTENT_LOOKUP_URI.buildUpon()
-					.appendPath(Uri.encode(cursor.getString(CursorCols.contact_lookup))).build();
+			Uri lookupUri = Contacts.CONTENT_LOOKUP_URI
+					.buildUpon()
+					.appendPath(
+							Uri.encode(cursor.getString(cursor.getColumnIndex(DbField.CONTACT_LOOKUP_ID.getName()))))
+					.build();
 
 			if (lookupKey != null) {
 				mQcb.assignContactUri(lookupUri);
@@ -143,24 +274,8 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 				mQcb.assignContactFromPhone(mDisplayNameView.getText().toString(), true);
 			}
 
-			if (lookupUri != null) {
-				InputStream is = Contacts.openContactPhotoInputStream(getActivity().getContentResolver(), lookupUri);
-				if (is != null) {
-					mQcb.setImageBitmap(BitmapFactory.decodeStream(is));
-					try {
-						is.close();
-					} catch (IOException e) {
-						if (BuildConfig.DEBUG) {
-							Log.w(TAG, "Error closing input stream");
-						}
-					}
-
-				} else {
-					mQcb.setImageDrawable(getResources().getDrawable(R.drawable.ic_contact_picture));
-				}
-			} else {
-				mQcb.setImageDrawable(getResources().getDrawable(R.drawable.ic_contact_picture));
-			}
+			mPhotoLoader.loadPhoto(mQcb,
+					UriUtils.parseUriOrNull(cursor.getString(cursor.getColumnIndex(DbField.PHOTO_URI.getName()))));
 		}
 	}
 
@@ -169,4 +284,27 @@ public class ComposeFragment extends SherlockFragment implements LoaderManager.L
 
 	}
 
+	public void setOnDeleteListener(OnDeleteListener listener) {
+		mOnDeleteListener = listener;
+	}
+
+	public void setOnFavouriteListener(OnFavouriteListener listener) {
+		mOnFavouriteListener = listener;
+	}
+
+	public boolean isFavourite() {
+		return mIsFavourite;
+	}
+
+	public void setIsFavourite(boolean isFav) {
+		mIsFavourite = isFav;
+	}
+
+	public static interface OnDeleteListener {
+		public void onDelete(int id);
+	}
+
+	public static interface OnFavouriteListener {
+		public void onToggleFavourite(int id);
+	}
 }

@@ -11,22 +11,22 @@ public class DbTable {
 		DbField.NUMBER,
 		DbField.MESSAGE, // Message contents
 		DbField.FAVOURITE, // This message is marked as a favourite
-		DbField.READ
+		DbField.READ,
+		DbField.THREAD_COUNT
 	});
 
 	public static final DbTable SENT = new DbTable("_sent", new DbField[] {
 		DbField.ID, 
 		DbField.TIME, // Timestamp in millis
 		DbField.MESSAGE, // Message contents
-	});
-
-	public static final DbTable RECIPIENTS = new DbTable("_recipients", new DbField[] {
-		DbField.ID, 
-		DbField.SENT_MESSAGE_ID, 
+		DbField.IN_REPLY_TO_ID,
+		DbField.NUMBER,
 		DbField.CONTACT_LOOKUP_ID, 
-		DbField.DISPLAY_NAME
+		DbField.DISPLAY_NAME,
+		DbField.PHOTO_URI,
+		DbField.IS_DRAFT,
 	});
-
+	
 	private String name;
 	private DbField[] fields;
 
